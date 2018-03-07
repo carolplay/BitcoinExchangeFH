@@ -13,6 +13,13 @@ Users can
 3. Recording market data to a in-memory database and other applications can quickly access to it.
 4. Customize the project for trading use.
 
+
+Clone the repo and go to its root, create /data folder.
+Type the following to run, for screen printing and saving to csv file.
+```
+PYTHONPATH=befh python3 -m befh.bitcoinexchangefh  -csv -csvpath data/ -print -instmts subscriptions_bitmex.ini
+```
+
 ### MySQL
 
 <p align="center">
