@@ -228,7 +228,7 @@ class Snapshot(MarketDataBase):
                     'a1', 'a2', 'a3', 'a4', 'a5',
                     'bq1', 'bq2', 'bq3', 'bq4', 'bq5',
                     'aq1', 'aq2', 'aq3', 'aq4', 'aq5',
-                    'order_date_time', 'trades_date_time', 'update_type']
+                    'order_date_time', 'trades_date_time', 'update_type', 'reception_time']
 
     @staticmethod
     def types(is_name=True):
@@ -244,7 +244,7 @@ class Snapshot(MarketDataBase):
             return ['decimal(20,8)', 'decimal(20,8)'] + \
                    ['decimal(20,8)'] * 10 + \
                    ['decimal(20,8)'] * 10 + \
-                   ['varchar(25)', 'varchar(25)', 'int']
+                   ['varchar(25)', 'varchar(25)', 'int', 'varchar(25)']
 
                 
     @staticmethod
@@ -260,5 +260,5 @@ class Snapshot(MarketDataBase):
                [a.price for a in l2_depth.asks[0:5]] + \
                [b.volume for b in l2_depth.bids[0:5]] + \
                [a.volume for a in l2_depth.asks[0:5]] + \
-               [l2_depth.date_time, last_trade.date_time, update_type]
+               [l2_depth.date_time, last_trade.date_time, update_type, datetime.utcnow().strftime("%Y%m%d %H:%M:%S.%f")]
         

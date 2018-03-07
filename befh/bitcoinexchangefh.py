@@ -29,6 +29,7 @@ from befh.clients.kdbplus import KdbPlusClient
 from befh.clients.mysql import MysqlClient
 from befh.clients.sqlite import SqliteClient
 from befh.clients.csv import FileClient
+from befh.clients.screen_print import PrintClient
 from befh.clients.zmq import ZmqClient
 from befh.subscription_manager import SubscriptionManager
 from befh.util import Logger
@@ -40,6 +41,7 @@ def main():
     parser.add_argument('-exchtime', action='store_true', help='Use exchange timestamp.')
     parser.add_argument('-kdb', action='store_true', help='Use Kdb+ as database.')
     parser.add_argument('-csv', action='store_true', help='Use csv file as database.')
+    parser.add_argument('-print', action='store_true', help='Print on screen.')
     parser.add_argument('-sqlite', action='store_true', help='Use SQLite database.')
     parser.add_argument('-mysql', action='store_true', help='Use MySQL.')
     parser.add_argument('-zmq', action='store_true', help='Use zmq publisher.')
@@ -91,6 +93,10 @@ def main():
             db_client = FileClient(dir=args.csvpath)
         else:
             db_client = FileClient()
+        db_clients.append(db_client)
+        is_database_defined = True
+    if args.print:
+        db_client = PrintClient()
         db_clients.append(db_client)
         is_database_defined = True
     if args.kdb:
@@ -169,3 +175,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# -csv -csvpath ../data/ -instmts subscriptions_bitmex.ini
+# PYTHONPATH=befh python3 -m befh.bitcoinexchangefh  -csv -csvpath data/ -print -instmts subscriptions_bitmex.ini

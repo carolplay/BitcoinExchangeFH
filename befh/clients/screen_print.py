@@ -1,0 +1,147 @@
+from befh.clients.database import DatabaseClient
+import sys
+import threading
+import os
+import csv
+
+
+class PrintClient(DatabaseClient):
+    """
+    File client
+    """
+
+    class Operator:
+        UNKNOWN = 0
+        EQUAL = 1
+        NOT_EQUAL = 2
+        GREATER = 3
+        GREATER_OR_EQUAL = 4
+        SMALLER = 5
+        SMALLER_OR_EQUAL = 6
+
+    def __init__(self):
+        """
+        Constructor
+        """
+        DatabaseClient.__init__(self)
+        self.lock = threading.Lock()
+        self.file_mapping = dict()
+
+    def create(self, table, columns, types, primary_key_index=(), is_ifnotexists=True):
+        """
+        Create table in the database
+        :param table: Table name
+        :param columns: Column array
+        :param types: Type array
+        :param is_ifnotexists: Create table if not exists keyword
+        """
+
+        return True
+
+    def insert(self, table, columns, types, values, primary_key_index=(), is_orreplace=False, is_commit=True):
+        """
+        Insert into the table
+        :param table: Table name
+        :param columns: Column array
+        :param types: Type array
+        :param values: Value array
+        :param primary_key_index: An array of indices of primary keys in columns,
+                          e.g. [0] means the first column is the primary key
+        :param is_orreplace: Indicate if the query is "INSERT OR REPLACE"
+        """
+        if len(columns) != len(values):
+            return False
+
+        self.lock.acquire()
+        print(values)
+        self.lock.release()
+
+        return True
+
+    def select(self, table, columns=['*'], condition='', orderby='', limit=0, isFetchAll=True):
+        """
+        Select rows from the table.
+        Currently the method only processes the one column ordering and condition
+        :param table: Table name
+        :param columns: Selected columns
+        :param condition: Where condition
+        :param orderby: Order by condition
+        :param limit: Rows limit
+        :param isFetchAll: Indicator of fetching all
+        :return Result rows
+        """
+        file_path = self.file_directory + table + ".csv"
+        is_all_columns = len(columns) == 1 and columns[0] == '*'
+        csv_field_names = []
+        columns = [e.split(' ')[0] for e in columns]
+        ret = []
+        is_error = False
+
+        # Preparing condition
+        if condition != '':
+            condition = condition.replace('=', '==')
+            condition = condition.replace('!==', '!=')
+            condition = condition.replace('>==', '>=')
+            condition = condition.replace('<==', '<=')
+
+        self.lock.acquire()
+        if not os.path.isfile(file_path):
+            is_error = True
+        else:
+            with open(file_path, "r") as csvfile:
+                reader = csv.reader(csvfile, lineterminator='\n', quotechar='\"', quoting=csv.QUOTE_NONNUMERIC)
+                csv_field_names = next(reader, None)
+                for col in columns:
+                    if not is_all_columns and col not in csv_field_names:
+                        raise Exception("Field (%s) is not in the table." % col)
+
+                for csv_row in reader:
+                    # Filter by condition statement
+                    is_selected = True
+                    if condition != '':
+                        condition_eval = condition
+                        for i in range(0, len(csv_field_names)):
+                            key = csv_field_names[i]
+                            value = csv_row[i]
+                            if condition_eval.find(key) > -1:
+                                condition_eval = condition_eval.replace(key, str(value))
+                        is_selected = eval(condition_eval)
+
+                    if is_selected:
+                        ret.append(list(csv_row))
+
+        self.lock.release()
+
+        if is_error:
+            raise Exception("File (%s) has not been created.")
+
+        if orderby != '':
+            # Sort the result
+            field = orderby.split(' ')[0].strip()
+            asc_val = orderby.split(' ')[1].strip() if len(orderby.split(' ')) > 1 else 'asc'
+            if asc_val != 'asc' and asc_val != 'desc':
+                raise Exception("Incorrect orderby in select statement (%s)." % orderby)
+            elif field not in csv_field_names:
+                raise Exception("Field (%s) is not in the table." % col)
+
+            field_index = csv_field_names.index(field)
+            ret = sorted(ret, key=lambda x:x[field_index], reverse=(asc_val == 'desc'))
+
+        if limit > 0:
+            # Trim the result by the limit
+            ret = ret[:limit]
+
+        if not is_all_columns:
+            field_index = [csv_field_names.index(x) for x in columns]
+            ret = [[row[i] for i in field_index] for row in ret]
+
+        return ret
+
+    def delete(self, table, condition='1==1'):
+        """
+        Delete rows from the table
+        :param table: Table name
+        :param condition: Where condition
+        """
+        raise Exception("Deletion is not supported in print screen client.")
+
